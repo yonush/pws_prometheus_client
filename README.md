@@ -36,19 +36,23 @@ The client assumes a [Prometheus](https://prometheus.io/) server application has
 ## Simple architecture
 
 The following image below shows the relationship of the PWS client with other components in the weather station system.
-![PWS client architecure](images\PWSclient.png)
+
+![PWS client architecure](images/PWSclient.png)
 
 The following sesttings were used in the weather station 
-![PWS settings](images\PWS_setting.png)
+
+![PWS settings](images/PWS_setting.png)
 
 When run from the command line or VScode you will get a Flask log output like below
-![PWS settings](images\pws_running.png)
+
+![PWS settings](images/pws_running.png)
 
 Just browsing to http://localhost:1111 renders the following simple HTML page where you can either click on either
 
 - **metrics** (http://localhost:8080/metrics) to show the metrics to be consumed by Prometheus
-- **stop** (http://localhost:1111/stop) to shutdown the pws client. This is especially useful if the client was run as a binary and would require shutting down through a task manager 
-![PWS settings](images\pws_browser.png)
+- **stop** (http://localhost:1111/stop) to shutdown the pws client. This is especially useful if the client was run as a binary and would require shutting down through a task manager
+  
+![PWS settings](images/pws_browser.png)
 
 Examples of the various data dumps can be found in [data_dumps.md](data_dumps.md).
 
