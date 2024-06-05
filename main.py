@@ -13,8 +13,11 @@ This uses the EasyWeatherPro firmware found in many other PWS's (Ambient Weather
     version 1.0
 """
 
+import argparse
 import json
 import math
+import os
+import socket
 import sys
 
 import gevent  # https://www.gevent.org/
@@ -29,6 +32,9 @@ app = Flask("Weather")
 
 PWSdata: dict = {}  # Incoming data from the PWS
 isReady: bool = False  # make sure data has been read
+pws_port: int = 1111  # personal weather station lsitening port
+prom_port: int = 8080  # Prometheus scraping port
+data_fld: str = ".\\"  # folder for the local data file
 
 # for i, v in enumerate(list):
 # for k, v in dict.items()
@@ -95,13 +101,15 @@ gauges: dict[str, Gauge] = {}
 
 
 def log(response: dict) -> None:
+    global data_fld
+
     """Log the JSON encoded telemetry to a text file
 
     Args:
         response (dict): key-value pairs from the POST request
     """
     try:
-        f = open(".\\pws.txt", "a")
+        f = open(f"{data_fld}\\pws.txt", "a")
         # data = str(response)
         data = json.dumps(response)
         f.write(f"{data}\n")
@@ -366,6 +374,26 @@ def process_request() -> None:
     isReady = False
 
 
+def get_ip() -> str:
+    """Get the active IP address of the machine
+
+    Returns:
+        str: Current active IP address of the host computer
+
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    try:
+        # doesn't even have to be reachable
+        s.connect(("8.8.8.8", 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = "127.0.0.1"
+    finally:
+        s.close()
+    return IP
+
+
 """
   Make the promeutheus client available for scrapping .
   Change the port below to suit your system if 8080 is not available - CLI is in progress
@@ -373,6 +401,25 @@ def process_request() -> None:
   Start the HTTP service and publish the metrics
 """
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="pws_client")
+    parser.add_argument(
+        "-i",
+        "--pws_port",
+        type=int,
+        help="Personal weather station listening port ",
+        default=1111,
+    )
+    parser.add_argument(
+        "-p", "--port", type=int, help="Prometheus listening port", default=8080
+    )
+    parser.add_argument(
+        "-f",
+        "--folder",
+        help="Folder for the local pws.txt data file",
+        default=os.getcwd(),
+    )
+    args = parser.parse_args()
+
     # create the gauges for the PWS variables
     for i, v in enumerate(pwsvar):
         # g = Gauge("DateData","Date string data as a metric",["data", "readable_datetime"])
@@ -381,12 +428,22 @@ if __name__ == "__main__":
         g.set(0)
         gauges[v] = g
 
+    pws_port = args.pws_port
+    prom_port = args.port
+    data_fld = args.folder
+
+    print("Prometheus client for EasyWeatherPro")
+    print(
+        f"Listening on 0.0.0.0:{pws_port} from the weather station and sending to Prometheus on 0.0.0.0:{prom_port}"
+    )
+    print(f"Logging data to {data_fld}\pws.txt")
+    print(f"PWS client active on http://{get_ip()}:{pws_port}")
     # setup the personal webserver reciever
-    pws = WSGIServer(("0.0.0.0", 1111), app)
+    pws = WSGIServer(("0.0.0.0", pws_port), app)
     pws.start()
 
     # start the prometheus scraper endpoint
-    start_http_server(8080, "0.0.0.0")
+    start_http_server(prom_port, "0.0.0.0")
     while True:
         process_request()
         gevent.sleep(30)
