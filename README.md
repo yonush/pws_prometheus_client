@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This [Prometheus client](https://github.com/prometheus/client_python) listens for incoming telemetry from single pwersonla weather station usign the EasyWeatherPro and a custom server setup. The firmware at the time of writing was 5.1.6.
+This [Prometheus client](https://github.com/prometheus/client_python) listens for incoming telemetry from single personal weather station usign the EasyWeatherPro and a custom server setup. The firmware at the time of writing was 5.1.6.
 
 The weather station used in this example data is based on the Tesa WS-2980c PRO personal weather station (PWS). 
 
